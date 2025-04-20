@@ -189,14 +189,16 @@ def process_questionnaire_answers(answers):
     # Store results in DynamoDB
     try:
         debug(f"Storing assessment data for ID: {assessment_id}")
+        put_item = {
+            'assessment_id': assessment_id,
+            'answers': json.dumps(formatted_answers, cls=CustomJSONEncoder),
+            'profile': json.dumps(profile, cls=CustomJSONEncoder),
+            'recommendations': json.dumps(recommendations, cls=CustomJSONEncoder),
+            'created_at': int(time.time())
+        }
+        debug(f"Formatted answers: {put_item}")
         assessments_table.put_item(
-            Item={
-                'assessment_id': assessment_id,
-                'answers': json.dumps(formatted_answers, cls=CustomJSONEncoder),
-                'profile': json.dumps(profile, cls=CustomJSONEncoder),
-                'recommendations': json.dumps(recommendations, cls=CustomJSONEncoder),
-                'created_at': int(time.time())
-            }
+            Item=put_item
         )
         debug("Successfully stored assessment data")
     except Exception as e:
