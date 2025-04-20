@@ -6,7 +6,7 @@
 class ApiService {
     constructor() {
         // AWS Application Load Balancer URL
-        this.apiBaseUrl = 'http://neurodiver-job-ALB-298737091.us-east-1.elb.amazonaws.com';
+        this.apiBaseUrl = 'http://wayfinder-ALB-1514960433.us-east-1.elb.amazonaws.com';
         
         // For local testing, you can use this environment variable
         if (window.API_GATEWAY_URL) {
