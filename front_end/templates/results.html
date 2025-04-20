@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="results-container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="display-4 mb-4">Your Results</h1>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">Work Environment Analysis</h2>
+                    <div class="analysis-content">
+                        {{ analysis|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">Recommended Job Matches</h2>
+                    
+                    {% for job in recommendations %}
+                    <div class="job-card mb-4 p-4 border rounded shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h3 class="h5 mb-1">{{ job.title }}</h3>
+                                <p class="mb-1">
+                                    <i class="bi bi-building me-1"></i>{{ job.company }} - 
+                                    <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                                </p>
+                            </div>
+                            <div class="match-score">
+                                <span class="badge rounded-pill bg-{{ 'success' if job.match_score >= 80 else 'warning' if job.match_score >= 60 else 'secondary' }}">
+                                    {{ job.match_score }}% Match
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <p class="text-muted mb-2">{{ job.reasoning }}</p>
+                            
+                            {% if job.highlights and job.highlights|length > 0 %}
+                            <div class="highlights-section mt-2">
+                                <p class="mb-1 small text-secondary">Why this matches your profile:</p>
+                                <div class="d-flex flex-wrap">
+                                    {% for highlight in job.highlights %}
+                                    <span class="badge bg-light text-dark me-2 mb-1 p-2">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        {{ highlight }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-3">
+                            <a href="{{ job.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>View Full Job Posting
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('welcome') }}" class="btn btn-primary">
+                    Start New Assessment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Fade in job cards one by one
+    document.addEventListener('DOMContentLoaded', function() {
+        const jobCards = document.querySelectorAll('.job-card');
+        jobCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 * (index + 1));
+        });
+    });
+</script>
+{% endblock %}

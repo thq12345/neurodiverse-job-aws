@@ -3,107 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neurodiverse Job Quest</title>
-    <link rel="stylesheet" href="static/css/styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Wayfinder Job Matcher</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="static/css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="mb-5 text-center py-4">
-            <h1>Neurodiverse Job Quest</h1>
-            <p class="lead">Find your career match based on your unique strengths and preferences</p>
-        </header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <img src="static/images/wayfinder-logo.svg" 
+                     alt="Wayfinder Logo" 
+                     height="40" 
+                     class="me-2">
+            </a>
+        </div>
+    </nav>
 
-        <main id="app">
-            <!-- Welcome Page -->
-            <div id="welcome-page" class="page active">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h2 class="card-title mb-4">Welcome to Neurodiverse Job Quest</h2>
-                        <p class="card-text mb-4">
-                            This tool helps you find career paths that align with your unique strengths, 
-                            preferences, and working style. Complete a short questionnaire to receive 
-                            personalized job recommendations.
+    <main class="container my-4">
+        <div class="welcome-container">
+            <div class="row justify-content-center">
+                <div class="col-md-10 text-left">
+                    <div class="hero-section mb-5">
+                        <div class="purple-badge mb-3">In today's competitive world</div>
+                        <h1 class="display-3 mb-4">The Journey To<br>A Fulfilling Career</h1>
+                        <p class="lead mb-4">
+                            We understand that everyone has unique preferences and needs in their work environment. 
+                            This tool will help match you with job opportunities that align with your specific preferences.
                         </p>
-                        <button id="start-btn" class="btn btn-primary btn-lg">Start Questionnaire</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Questionnaire Page -->
-            <div id="questionnaire-page" class="page">
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="card-title mb-4 text-center">Questionnaire</h2>
-                        <form id="questionnaire-form">
-                            <div id="questions-container">
-                                <!-- Questions will be loaded here -->
-                                <div class="text-center mt-4 loading">
-                                    <div class="spinner-border" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <p>Loading questions...</p>
-                                </div>
-                            </div>
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">Submit Answers</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results Page -->
-            <div id="results-page" class="page">
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="card-title mb-4 text-center">Your Results</h2>
-                        
-                        <div id="results-loading" class="text-center mt-4">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p>Analyzing your responses...</p>
+                        <div class="cta-buttons">
+                            <a href="questionnaire.html" 
+                            class="btn btn-primary btn-lg">Find Your Job</a>
+                            <a href="#how-it-works" 
+                            class="btn btn-outline-secondary btn-lg ms-3">Learn More</a>
                         </div>
-                        
-                        <div id="results-content" style="display: none;">
-                            <div class="row mb-5">
-                                <div class="col-md-12">
-                                    <h3>Your Profile</h3>
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h4>Strengths</h4>
-                                            <ul id="strengths-list"></ul>
-                                            
-                                            <h4>Working Style</h4>
-                                            <p id="work-style"></p>
-                                            
-                                            <h4>Ideal Environment</h4>
-                                            <p id="environment"></p>
-                                        </div>
-                                    </div>
+                    </div>
+
+                    <div class="stats-section mb-5">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">154K</div>
+                                    <div class="stat-label">Available Jobs</div>
                                 </div>
                             </div>
-                            
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <h3>Job Recommendations</h3>
-                                    <div id="recommendations-container"></div>
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">20K</div>
+                                    <div class="stat-label">Career Paths</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <div class="stat-number">95%</div>
+                                    <div class="stat-label">Match Rate</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="how-it-works" class="process-section">
+                        <h2 class="h3 mb-4">How It Works</h2>
+                        <div class="process-steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h3 class="h5">Complete Assessment</h3>
+                                    <p>Answer 5 simple questions about your work preferences.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h3 class="h5">AI Analysis</h3>
+                                    <p>Our AI analyzes your responses to understand your ideal work environment.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h3 class="h5">Get Matched</h3>
+                                    <p>Receive personalized job recommendations that match your preferences.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </main>
 
-        <footer class="mt-5 py-3 text-center text-muted">
-            <p>&copy; 2025 Neurodiverse Job Quest</p>
-        </footer>
-    </div>
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">© 2024 Wayfinder Job Matcher</span>
+        </div>
+    </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="static/js/api.js"></script>
     <script src="static/js/app.js"></script>
+    
+    <script>
+        // Initialize feather icons
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+    </script>
 </body>
 </html> 

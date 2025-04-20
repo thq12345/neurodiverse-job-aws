@@ -1,16 +1,19 @@
-FROM python:3.11-slim
+FROM python:3.11.5-bookworm
+WORKDIR /function
 
-WORKDIR /app
-
-# Copy requirements file and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the application code
+# Copy code & deps spec
 COPY . .
 
-# Expose the port for the FastAPI application
-EXPOSE 8000
+# Install AWS Ric & Python deps
+RUN pip install --no-cache-dir awslambdaric \
+  && pip install --no-cache-dir -r requirements.txt
+  
+# Expose port 80 for ECS/ALB
+EXPOSE 80
 
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Add healthcheck for ECS
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/health || exit 1
+
+# Command to run the application on port 80
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"] 

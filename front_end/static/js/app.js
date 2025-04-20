@@ -1,13 +1,9 @@
 /**
- * Main JavaScript for Neurodiverse Job Quest
+ * Main JavaScript for Wayfinder Job Matcher
  * Handles UI interaction and application flow
  */
 
-// DOM Elements
-const welcomePage = document.getElementById('welcome-page');
-const questionnairePage = document.getElementById('questionnaire-page');
-const resultsPage = document.getElementById('results-page');
-const startBtn = document.getElementById('start-btn');
+// DOM Elements - these will vary based on which page we're on
 const questionnaireForm = document.getElementById('questionnaire-form');
 const questionsContainer = document.getElementById('questions-container');
 const resultsLoading = document.getElementById('results-loading');
@@ -18,27 +14,35 @@ const environment = document.getElementById('environment');
 const recommendationsContainer = document.getElementById('recommendations-container');
 
 // State
-let currentPage = welcomePage;
 let questions = [];
 let assessmentId = null;
 
-// Event Listeners
+// Event Listeners - add only if the elements exist
 document.addEventListener('DOMContentLoaded', init);
-startBtn.addEventListener('click', startQuestionnaire);
-questionnaireForm.addEventListener('submit', submitQuestionnaire);
+
+if (questionnaireForm) {
+    questionnaireForm.addEventListener('submit', submitQuestionnaire);
+}
 
 /**
- * Initialize the application
+ * Initialize the application based on current page
  */
 async function init() {
-    // Check for assessment ID in URL (for sharing results)
+    // Identify which page we're on based on URL or DOM elements
+    const currentPath = window.location.pathname;
+    
+    // Check for assessment ID in URL (for results page)
     const urlParams = new URLSearchParams(window.location.search);
     const urlAssessmentId = urlParams.get('assessment_id');
     
-    if (urlAssessmentId) {
+    if (urlAssessmentId && currentPath.includes('results.html')) {
         assessmentId = urlAssessmentId;
-        navigateTo(resultsPage);
         await loadResults(assessmentId);
+    }
+    
+    // On questionnaire page, start loading questions
+    if (currentPath.includes('questionnaire.html') && questionsContainer) {
+        startQuestionnaire();
     }
     
     // Check API health
@@ -54,8 +58,6 @@ async function init() {
  * Start the questionnaire
  */
 async function startQuestionnaire() {
-    navigateTo(questionnairePage);
-    
     try {
         // Fetch questions from API
         const response = await apiService.getQuestionnaire();
@@ -84,65 +86,56 @@ function renderQuestions(questions) {
     // Render each question
     questions.forEach((question, index) => {
         const questionElement = document.createElement('div');
-        questionElement.className = 'question';
+        questionElement.className = 'question-item';
         questionElement.id = `question-${question.id}`;
         
-        const questionText = document.createElement('div');
-        questionText.className = 'question-text';
-        questionText.textContent = `${index + 1}. ${question.text}`;
+        const questionTitle = document.createElement('h3');
+        questionTitle.className = 'question-title h5 mb-3';
+        questionTitle.textContent = `${index + 1}. ${question.text}`;
         
-        questionElement.appendChild(questionText);
+        questionElement.appendChild(questionTitle);
         
         if (question.type === 'free_response') {
             // Free response (text area)
-            const textAreaContainer = document.createElement('div');
-            textAreaContainer.className = 'mb-3';
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group mb-4';
             
             const textArea = document.createElement('textarea');
             textArea.className = 'form-control';
             textArea.name = `q${question.id}`;
+            textArea.id = `q${question.id}`;
             textArea.rows = 4;
-            textArea.placeholder = 'Enter your response (optional)';
+            textArea.placeholder = 'Share any additional information that might help us understand your needs better...';
+            if (!question.optional) textArea.required = true;
             
-            textAreaContainer.appendChild(textArea);
-            questionElement.appendChild(textAreaContainer);
+            formGroup.appendChild(textArea);
+            questionElement.appendChild(formGroup);
         } else {
             // Multiple choice question
             const optionsContainer = document.createElement('div');
             optionsContainer.className = 'options-container';
             
             question.options.forEach(([value, text]) => {
-                const option = document.createElement('div');
-                option.className = 'option';
-                option.dataset.value = value;
+                const optionItem = document.createElement('div');
+                optionItem.className = 'option-item mb-3';
                 
                 const input = document.createElement('input');
                 input.type = 'radio';
-                input.className = 'option-radio';
+                input.className = 'form-check-input visually-hidden';
                 input.name = `q${question.id}`;
                 input.value = value;
-                input.id = `q${question.id}-${value}`;
-                input.required = !question.optional;
+                input.id = `q${question.id}_option${value}`;
+                if (!question.optional) input.required = true;
                 
                 const label = document.createElement('label');
-                label.htmlFor = `q${question.id}-${value}`;
+                label.className = 'form-check-label option-label';
+                label.htmlFor = `q${question.id}_option${value}`;
                 label.textContent = text;
                 
-                option.appendChild(input);
-                option.appendChild(label);
+                optionItem.appendChild(input);
+                optionItem.appendChild(label);
                 
-                // Make the entire option clickable
-                option.addEventListener('click', () => {
-                    input.checked = true;
-                    
-                    // Update selected state for styling
-                    optionsContainer.querySelectorAll('.option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    option.classList.add('selected');
-                });
-                
-                optionsContainer.appendChild(option);
+                optionsContainer.appendChild(optionItem);
             });
             
             questionElement.appendChild(optionsContainer);
@@ -168,20 +161,27 @@ async function submitQuestionnaire(event) {
     }
     
     try {
+        // Show loading indicator
+        const submitButton = questionnaireForm.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        submitButton.disabled = true;
+        
         // Submit answers to API
         const response = await apiService.submitQuestionnaire(answers);
         assessmentId = response.assessment_id;
         
-        // Navigate to results page
-        navigateTo(resultsPage);
-        
-        // Load results
-        await loadResults(assessmentId);
-        
-        // Update URL for sharing
-        window.history.pushState({}, '', `?assessment_id=${assessmentId}`);
+        // Redirect to results page
+        window.location.href = `results.html?assessment_id=${assessmentId}`;
     } catch (error) {
         console.error('Error submitting questionnaire:', error);
+        
+        // Restore button state
+        const submitButton = questionnaireForm.querySelector('button[type="submit"]');
+        submitButton.innerHTML = originalButtonText;
+        submitButton.disabled = false;
+        
+        // Show error message
         questionsContainer.innerHTML += `
             <div class="alert alert-danger mt-3" role="alert">
                 Error submitting your answers. Please try again.
@@ -195,6 +195,9 @@ async function submitQuestionnaire(event) {
  * @param {string} assessmentId - The assessment ID
  */
 async function loadResults(assessmentId) {
+    // Make sure we have the results container elements
+    if (!resultsLoading || !resultsContent) return;
+    
     // Show loading state
     resultsLoading.style.display = 'block';
     resultsContent.style.display = 'none';
@@ -204,7 +207,7 @@ async function loadResults(assessmentId) {
         const results = await apiService.getResults(assessmentId);
         
         // Generate HTML from the JSON profile and render it
-        renderProfileFromJSON(results.profile);
+        renderProfileData(results.profile);
         
         // Render recommendations
         renderRecommendations(results.recommendations);
@@ -215,117 +218,85 @@ async function loadResults(assessmentId) {
     } catch (error) {
         console.error('Error loading results:', error);
         resultsLoading.style.display = 'none';
-        resultsPage.querySelector('.card-body').innerHTML += `
-            <div class="alert alert-danger" role="alert">
-                Error loading your results. Please try again later.
-            </div>
-        `;
+        
+        // Show error message where results would be
+        const resultsContainer = document.querySelector('.results-container');
+        if (resultsContainer) {
+            resultsContainer.innerHTML += `
+                <div class="alert alert-danger" role="alert">
+                    Error loading your results. Please try again later or 
+                    <a href="questionnaire.html" class="alert-link">start a new assessment</a>.
+                </div>
+            `;
+        }
     }
 }
 
 /**
- * Generate HTML from profile data and render it
+ * Render profile data in the UI
  * @param {Object} profile - The profile object containing analysis data
  */
-function renderProfileFromJSON(profile) {
-    // Create the HTML content from profile data
-    let profileHTML = `<div class='analysis-section'>`;
+function renderProfileData(profile) {
+    if (!profile) return;
     
-    // Format sections based on what's available in the profile
-    if (profile.work_style) {
-        const description = typeof profile.work_style === 'object' ? 
-            profile.work_style.description : profile.work_style;
-        const explanation = typeof profile.work_style === 'object' ? 
-            profile.work_style.explanation || '' : '';
-            
-        profileHTML += `
-            <h3>Work Style</h3>
-            <p class="mb-2"><strong>${description}</strong></p>
-            <p class="text-muted mb-4">${explanation}</p>
-        `;
-    }
+    // Find the profile content container
+    const profileContent = document.querySelector('.profile-content');
+    if (!profileContent) return;
     
-    if (profile.environment) {
-        const description = typeof profile.environment === 'object' ? 
-            profile.environment.description : profile.environment;
-        const explanation = typeof profile.environment === 'object' ? 
-            profile.environment.explanation || '' : '';
-            
-        profileHTML += `
-            <h3>Ideal Environment</h3>
-            <p class="mb-2"><strong>${description}</strong></p>
-            <p class="text-muted mb-4">${explanation}</p>
-        `;
-    }
+    // Clear existing content
+    profileContent.innerHTML = '';
     
-    if (profile.interaction_level) {
-        const description = typeof profile.interaction_level === 'object' ? 
-            profile.interaction_level.description : profile.interaction_level;
-        const explanation = typeof profile.interaction_level === 'object' ? 
-            profile.interaction_level.explanation || '' : '';
-            
-        profileHTML += `
-            <h3>Interaction Level</h3>
-            <p class="mb-2"><strong>${description}</strong></p>
-            <p class="text-muted mb-4">${explanation}</p>
-        `;
-    }
+    // Create the analysis section with the structure from the template
+    const analysisSection = document.createElement('div');
+    analysisSection.className = 'analysis-section';
     
-    if (profile.task_preference) {
-        const description = typeof profile.task_preference === 'object' ? 
-            profile.task_preference.description : profile.task_preference;
-        const explanation = typeof profile.task_preference === 'object' ? 
-            profile.task_preference.explanation || '' : '';
-            
-        profileHTML += `
-            <h3>Task Preferences</h3>
-            <p class="mb-2"><strong>${description}</strong></p>
-            <p class="text-muted mb-4">${explanation}</p>
-        `;
-    }
-    
-    if (profile.additional_insights) {
-        const description = typeof profile.additional_insights === 'object' ? 
-            profile.additional_insights.description : profile.additional_insights;
-        const explanation = typeof profile.additional_insights === 'object' ? 
-            profile.additional_insights.explanation || '' : '';
-            
-        profileHTML += `
-            <h3>Additional Insights</h3>
-            <p class="mb-2"><strong>${description || 'No additional insights'}</strong></p>
-            <p class="text-muted mb-4">${explanation}</p>
-        `;
-    }
-    
-    profileHTML += `</div>`;
-    
-    // Get the profile section
-    const profileSection = document.querySelector('#results-content .row:first-child .col-md-12 .card-body');
-    
-    // Replace the existing content with the HTML
-    if (profileSection) {
-        profileSection.innerHTML = profileHTML;
-    } else {
-        // If the expected structure isn't found, create a container for the profile
-        const profileContainer = document.createElement('div');
-        profileContainer.className = 'profile-container';
-        profileContainer.innerHTML = profileHTML;
+    // Build the HTML content for the analysis section
+    let analysisHtml = `
+        <h3>Work Style</h3>
+        <p class="mb-2"><strong>${profile['work_style']?.description || 'Not available'}</strong></p>
+        <p class="text-muted mb-4">${profile['work_style']?.explanation || ''}</p>
+
+        <h3>Ideal Environment</h3>
+        <p class="mb-2"><strong>${profile['environment']?.description || 'Not available'}</strong></p>
+        <p class="text-muted mb-4">${profile['environment']?.explanation || ''}</p>
+
+        <h3>Interaction Level</h3>
+        <p class="mb-2"><strong>${profile['interaction_level']?.description || 'Not available'}</strong></p>
+        <p class="text-muted mb-4">${profile['interaction_level']?.explanation || ''}</p>
+
+        <h3>Task Preferences</h3>
+        <p class="mb-2"><strong>${profile['task_preference']?.description || 'Not available'}</strong></p>
+        <p class="text-muted mb-4">${profile['task_preference']?.explanation || ''}</p>
         
-        // Clear existing content in case it was filled by the legacy method
-        if (strengthsList) strengthsList.innerHTML = '';
-        if (workStyle) workStyle.textContent = '';
-        if (environment) environment.textContent = '';
+        <h3>Additional Insights</h3>
+        <p class="mb-2"><strong>${profile.additional_insights?.description || 'No additional insights'}</strong></p>
+        <p class="text-muted mb-4">${profile.additional_insights?.explanation || ''}</p>
+    `;
+    
+    // Add the HTML to the section
+    analysisSection.innerHTML = analysisHtml;
+    
+    // Add the analysis section to the profile content
+    profileContent.appendChild(analysisSection);
+    
+    // If we have strengths, render them separately (keeping this part for backward compatibility)
+    if (profile.strengths && profile.strengths.length > 0) {
+        const strengthsSection = document.createElement('div');
+        strengthsSection.className = 'mb-4';
+        strengthsSection.innerHTML = `
+            <h3>Strengths</h3>
+            <ul id="new-strengths-list"></ul>
+        `;
         
-        // Append the new container to the parent of these elements
-        if (strengthsList && strengthsList.parentElement) {
-            const parentElement = strengthsList.parentElement.parentElement;
-            parentElement.appendChild(profileContainer);
-        } else {
-            // Fallback in case the DOM structure is different
-            const resultsDiv = document.getElementById('results-content');
-            if (resultsDiv) {
-                resultsDiv.innerHTML = profileHTML + resultsDiv.innerHTML;
-            }
+        profileContent.insertBefore(strengthsSection, profileContent.firstChild);
+        
+        const strengthsList = document.getElementById('new-strengths-list');
+        if (strengthsList) {
+            profile.strengths.forEach(strength => {
+                const li = document.createElement('li');
+                li.textContent = strength;
+                strengthsList.appendChild(li);
+            });
         }
     }
 }
@@ -335,98 +306,117 @@ function renderProfileFromJSON(profile) {
  * @param {Array} recommendations - The job recommendations
  */
 function renderRecommendations(recommendations) {
+    if (!recommendationsContainer || !recommendations) return;
+    
     // Clear existing content
     recommendationsContainer.innerHTML = '';
+    
+    if (recommendations.length === 0) {
+        recommendationsContainer.innerHTML = `
+            <div class="alert alert-info">
+                No job recommendations found. Please try again with different answers.
+            </div>
+        `;
+        return;
+    }
     
     // Add each recommendation
     recommendations.forEach(job => {
         const jobCard = document.createElement('div');
-        jobCard.className = 'job-card';
+        jobCard.className = 'job-card mb-4 p-4 border rounded shadow-sm';
         
-        // Format score as percentage - handle different property names
+        // Format score as percentage
         const score = job.match_score || job.fit_score || 0;
-        const displayScore = typeof score === 'number' ? Math.round(score) : Math.round(parseFloat(score) * 100);
+        const displayScore = typeof score === 'number' ? score : Math.round(parseFloat(score) * 100);
         
-        // Handle different property structures in job objects
-        const title = job.title || '';
-        const description = job.description || job.reasoning || '';
-        const company = job.company ? `<div class="job-company">${job.company}</div>` : '';
-        const location = job.location ? `<div class="job-location">${job.location}</div>` : '';
+        // Determine badge color based on score
+        let badgeColor = 'secondary';
+        if (displayScore >= 80) badgeColor = 'success';
+        else if (displayScore >= 60) badgeColor = 'warning';
         
-        // Create basic job card HTML
+        // Create job card HTML
         let cardHTML = `
-            <div class="job-title">${title}</div>
-            <div class="match-score">${displayScore}% Match</div>
-            ${company}
-            ${location}
-            <div class="job-description">${description}</div>
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h3 class="h5 mb-1">${job.title || 'Unnamed Job'}</h3>
+                    <p class="mb-1">
+                        ${job.company ? `<i class="bi bi-building me-1"></i>${job.company}` : ''}
+                        ${job.company && job.location ? ' - ' : ''}
+                        ${job.location ? `<i class="bi bi-geo-alt me-1"></i>${job.location}` : ''}
+                    </p>
+                </div>
+                <div class="match-score">
+                    <span class="badge rounded-pill bg-${badgeColor}">
+                        ${displayScore}% Match
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-2">${job.description || job.reasoning || ''}</p>
+            </div>
         `;
         
-        // Add key traits if available
-        if (job.key_traits) {
-            const traits = job.key_traits || [];
-            if (traits.length > 0) {
-                cardHTML += `
-                    <div class="key-traits">
-                        <h5>Key Traits:</h5>
-                        <ul>
-                            ${traits.map(trait => `<li>${trait}</li>`).join('')}
-                        </ul>
+        // Add strengths/highlights if available
+        const strengths = job.strengths || job.highlights || [];
+        if (strengths.length > 0) {
+            cardHTML += `
+                <div class="highlights-section mt-2">
+                    <p class="mb-1 small text-secondary">Why this matches your profile:</p>
+                    <div class="d-flex flex-wrap">
+                        ${strengths.map(strength => `
+                            <span class="badge bg-light text-dark me-2 mb-1 p-2">
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                ${strength}
+                            </span>
+                        `).join('')}
                     </div>
-                `;
-            }
-        }
-        
-        // Add environment if available
-        if (job.environment) {
-            cardHTML += `
-                <div class="environment">
-                    <h5>Work Environment:</h5>
-                    <p>${job.environment}</p>
                 </div>
             `;
         }
         
-        // Add considerations if available
-        if (job.considerations && job.considerations.length > 0) {
+        // Add challenges if available
+        const challenges = job.challenges || job.considerations || [];
+        if (challenges.length > 0) {
             cardHTML += `
-                <div class="considerations">
-                    <h5>Considerations:</h5>
-                    <ul>
-                        ${job.considerations.map(consideration => `<li>${consideration}</li>`).join('')}
-                    </ul>
+                <div class="highlights-section mt-2">
+                    <p class="mb-1 small text-secondary">Potential challenges:</p>
+                    <div class="d-flex flex-wrap">
+                        ${challenges.map(challenge => `
+                            <span class="badge bg-light text-dark me-2 mb-1 p-2">
+                                <i class="bi bi-info-circle-fill text-warning me-1"></i>
+                                ${challenge}
+                            </span>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }
         
-        // Add link if available
+        // Add job link if available
         if (job.url) {
             cardHTML += `
-                <div class="job-link">
-                    <a href="${job.url}" target="_blank" class="btn btn-primary btn-sm">Learn More</a>
+                <div class="mt-3">
+                    <a href="${job.url}" class="btn btn-outline-primary btn-sm" target="_blank">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>View Full Job Posting
+                    </a>
                 </div>
             `;
         }
         
         jobCard.innerHTML = cardHTML;
         recommendationsContainer.appendChild(jobCard);
+        
+        // Add animation
+        setTimeout(() => {
+            jobCard.style.opacity = '0';
+            jobCard.style.transform = 'translateY(20px)';
+            jobCard.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                jobCard.style.opacity = '1';
+                jobCard.style.transform = 'translateY(0)';
+            }, 50);
+        }, 0);
     });
-}
-
-/**
- * Navigate to a new page
- * @param {HTMLElement} targetPage - The page to navigate to
- */
-function navigateTo(targetPage) {
-    // Hide current page
-    currentPage.classList.remove('active');
-    
-    // Show target page
-    targetPage.classList.add('active');
-    
-    // Update current page
-    currentPage = targetPage;
-    
-    // Scroll to top
-    window.scrollTo(0, 0);
 } 
