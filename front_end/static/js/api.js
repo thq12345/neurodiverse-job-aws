@@ -5,8 +5,8 @@
 
 class ApiService {
     constructor() {
-        // Replace with your API Gateway URL after deployment
-        this.apiBaseUrl = 'https://your-api-id.execute-api.your-region.amazonaws.com/prod';
+        // AWS Application Load Balancer URL
+        this.apiBaseUrl = 'http://neurodiver-job-ALB-298737091.us-east-1.elb.amazonaws.com';
         
         // For local testing, you can use this environment variable
         if (window.API_GATEWAY_URL) {
@@ -16,6 +16,7 @@ class ApiService {
         // This allows local testing without setting up environment variables
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.log('Running in local development mode');
+            this.apiBaseUrl = 'http://localhost:8000';
         }
     }
 
@@ -25,6 +26,7 @@ class ApiService {
      */
     setApiBaseUrl(url) {
         this.apiBaseUrl = url;
+        this.useMockData = false;
     }
 
     /**
@@ -49,8 +51,6 @@ class ApiService {
      */
     async getQuestionnaire() {
         try {
-
-            
             const response = await fetch(`${this.apiBaseUrl}/questionnaire`);
             return this.handleResponse(response);
         } catch (error) {
@@ -93,8 +93,6 @@ class ApiService {
      */
     async getResults(assessmentId) {
         try {
-
-            
             const response = await fetch(`${this.apiBaseUrl}/results/${assessmentId}`);
             return this.handleResponse(response);
         } catch (error) {
@@ -109,7 +107,6 @@ class ApiService {
      */
     async checkHealth() {
         try {
-
             const response = await fetch(`${this.apiBaseUrl}/health`);
             return this.handleResponse(response);
         } catch (error) {
@@ -117,11 +114,10 @@ class ApiService {
             throw error;
         }
     }
-    
 }
 
 // Create a singleton instance of the API service
 const apiService = new ApiService();
 
 // If running locally with a custom API URL, you can set it here:
-// window.API_GATEWAY_URL = 'http://localhost:3000'; 
+// window.API_GATEWAY_URL = 'http://localhost:8000'; 

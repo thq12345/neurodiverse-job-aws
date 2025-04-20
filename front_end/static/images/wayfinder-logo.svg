@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="150px" height="40px" viewBox="0 0 150 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Wayfinder Logo</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#FFFFFF" x="0" y="0" width="150" height="40"></rect>
+        <text font-family="Arial-BoldMT, Arial" font-size="18" font-weight="bold" fill="#5D4DB5">
+            <tspan x="10" y="26">Wayfinder</tspan>
+        </text>
+        <path d="M132,10 L140,19 L132,28" stroke="#5D4DB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+</svg> 

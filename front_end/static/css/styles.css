@@ -1,8 +1,8 @@
-/* Main Styles for Neurodiverse Job Quest */
+/* Main Styles for Wayfinder Job Matcher */
 
 :root {
-    --primary-color: #6366f1;
-    --primary-hover: #4f46e5;
+    --primary-color: #5D4DB5;
+    --primary-hover: #4a3d94;
     --secondary-color: #10b981;
     --light-bg: #f9fafb;
     --dark-text: #1f2937;
@@ -16,7 +16,13 @@ body {
     line-height: 1.6;
     color: var(--dark-text);
     background-color: var(--light-bg);
-    padding: 20px 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
 }
 
 h1, h2, h3, h4 {
@@ -25,25 +31,169 @@ h1, h2, h3, h4 {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1140px;
 }
 
-/* Card styling */
-.card {
+/* ===== NAVBAR ===== */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* ===== WELCOME PAGE ===== */
+.welcome-container {
+    padding: 2rem 0;
+}
+
+.purple-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: rgba(93, 77, 181, 0.1);
+    color: var(--primary-color);
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.hero-section {
+    padding: 2rem 0 3rem;
+}
+
+.hero-section h1 {
+    color: var(--dark-text);
+    font-weight: 800;
+}
+
+.stats-section {
+    padding: 2rem 0;
+}
+
+.stat-card {
+    padding: 1.5rem;
+    text-align: center;
+    border-radius: 8px;
+    background-color: var(--white);
+    box-shadow: var(--card-shadow);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: var(--light-text);
+}
+
+.process-section {
+    padding: 2rem 0;
+}
+
+.process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.step-number {
+    background-color: var(--primary-color);
+    color: var(--white);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+/* ===== QUESTIONNAIRE PAGE ===== */
+.questionnaire-container {
+    padding: 2rem 0;
+}
+
+.question-card {
+    background-color: var(--white);
     border-radius: 8px;
     box-shadow: var(--card-shadow);
-    border: none;
-    margin-bottom: 2rem;
-}
-
-.card-body {
     padding: 2rem;
 }
 
-/* Button styling */
+.question-item {
+    margin-bottom: 2rem;
+}
+
+.option-label {
+    display: block;
+    padding: 1rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-label:hover {
+    background-color: rgba(93, 77, 181, 0.05);
+    border-color: var(--primary-color);
+}
+
+input[type="radio"]:checked + .option-label {
+    background-color: rgba(93, 77, 181, 0.1);
+    border-color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* ===== RESULTS PAGE ===== */
+.results-container {
+    padding: 2rem 0;
+}
+
+.job-card {
+    background-color: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease;
+}
+
+.job-card:hover {
+    transform: translateY(-4px);
+}
+
+.match-score {
+    font-weight: 600;
+}
+
+.highlights-section {
+    background-color: rgba(16, 185, 129, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+/* ===== COMPONENTS ===== */
 .btn-primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
 }
 
 .btn-primary:hover, .btn-primary:focus {
@@ -51,134 +201,38 @@ h1, h2, h3, h4 {
     border-color: var(--primary-hover);
 }
 
-/* Page transitions */
-.page {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-}
-
-.page.active {
-    display: block;
-    opacity: 1;
-}
-
-/* Question styling */
-.question {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.question:last-child {
-    border-bottom: none;
-}
-
-.question-text {
-    font-weight: 600;
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-}
-
-.options-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.option {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.option:hover {
-    background-color: #f3f4f6;
-}
-
-.option.selected {
-    background-color: #eff6ff;
-    border-color: var(--primary-color);
-}
-
-.option-radio {
-    margin-right: 0.75rem;
-}
-
-/* Job recommendation card */
-.job-card {
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.job-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--card-shadow);
-}
-
-.job-title {
-    font-weight: 600;
-    font-size: 1.2rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-}
-
-.job-description {
-    margin-bottom: 1rem;
+.btn-outline-secondary {
+    border-color: #ddd;
     color: var(--dark-text);
 }
 
-.fit-score {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background-color: #ecfdf5;
-    color: var(--secondary-color);
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: var(--dark-text);
 }
 
-.strengths-match, .considerations {
-    margin-bottom: 0.5rem;
-}
-
-.strengths-match h5, .considerations h5 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.strengths-match ul, .considerations ul {
-    padding-left: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-
-/* Form Elements */
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-}
-
-/* Loading spinner */
 .loading {
-    padding: 2rem 0;
+    padding: 3rem 0;
+    text-align: center;
 }
 
-/* Responsive Adjustments */
+.spinner-border {
+    color: var(--primary-color);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
 @media (max-width: 768px) {
-    .container {
-        padding: 0 15px;
+    .hero-section h1 {
+        font-size: 2.5rem;
     }
     
-    .card-body {
-        padding: 1.5rem;
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .step {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
     }
 } 

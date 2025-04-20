@@ -113,6 +113,13 @@ questions = [
     }
 ]
 
+# JSON encoder for handling Decimal types and other non-standard types
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        from decimal import Decimal
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(CustomJSONEncoder, self).default(obj)
 
 # Main function to process questionnaire answers and return analysis and recommendations
 def process_questionnaire_answers(answers):
@@ -185,9 +192,9 @@ def process_questionnaire_answers(answers):
         assessments_table.put_item(
             Item={
                 'assessment_id': assessment_id,
-                'answers': json.dumps(formatted_answers),
-                'profile': json.dumps(profile),
-                'recommendations': json.dumps(recommendations),
+                'answers': json.dumps(formatted_answers, cls=CustomJSONEncoder),
+                'profile': json.dumps(profile, cls=CustomJSONEncoder),
+                'recommendations': json.dumps(recommendations, cls=CustomJSONEncoder),
                 'created_at': int(time.time())
             }
         )
@@ -203,7 +210,7 @@ def process_questionnaire_answers(answers):
             "assessment_id": assessment_id,
             "profile": profile,
             "recommendations": recommendations
-        })
+        }, cls=CustomJSONEncoder)
     }
 
 
