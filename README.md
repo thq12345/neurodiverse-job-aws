@@ -1,6 +1,6 @@
-# Neurodiverse Job Analysis API
+# Wayfinder Job Matcher
 
-A FastAPI-based API for analyzing job preferences and providing recommendations for neurodiverse individuals.
+A web application for analyzing job preferences and providing recommendations for neurodiverse individuals.
 
 ## Overview
 
@@ -13,9 +13,13 @@ This application provides:
 ## Architecture
 
 The application is structured following separation of concerns:
-- `main.py` - FastAPI application entry point, handles routing only
-- `app.py` - Contains business logic and data processing functions
-- Other supporting modules for analysis and recommendations
+- Backend:
+  - `main.py` - FastAPI application entry point, handles routing and API endpoints
+  - `app.py` - Contains business logic and data processing functions
+  - Supporting modules for analysis and recommendations
+- Frontend:
+  - Static HTML/CSS/JavaScript files for the user interface
+  - API communication through `api.js`
 
 ## Development Setup
 
@@ -41,20 +45,134 @@ The application is structured following separation of concerns:
 
 Build the Docker container:
 ```
-docker build -t neurodiverse-job-api .
+docker build -t wayfinder-job-api .
 ```
 
 Run the container:
 ```
-docker run -p 8000:8000 --env-file .env neurodiverse-job-api
+docker run -p 8000:8000 --env-file .env wayfinder-job-api
 ```
 
-## Deploying to AWS ECS
+## Deploying to AWS
 
-1. Create an ECR repository
-2. Push your Docker image to ECR
-3. Create an ECS cluster and task definition
-4. Deploy the service with appropriate IAM roles for DynamoDB access
+### Step 1: Deploy with ECR and ECS
+
+1. **Create an ECR Repository:**
+   ```bash
+   aws ecr create-repository --repository-name wayfinder-job-app
+   ```
+
+2. **Authenticate Docker to your ECR registry:**
+   ```bash
+   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.us-east-1.amazonaws.com
+   ```
+
+3. **Build, tag, and push your Docker image:**
+   ```bash
+   docker build -t wayfinder-job-app .
+   docker tag wayfinder-job-app:latest <your-aws-account-id>.dkr.ecr.us-east-1.amazonaws.com/wayfinder-job-app:latest
+   docker push <your-aws-account-id>.dkr.ecr.us-east-1.amazonaws.com/wayfinder-job-app:latest
+   ```
+
+4. **Create an ECS Cluster:**
+   - Go to ECS console and create a new cluster
+   - Choose "AWS Fargate" (serverless) as the launch type
+
+5. **Create a Task Definition:**
+   - Create a new task definition (Fargate launch type)
+   - Configure CPU (1 vCPU) and Memory (2GB)
+   - Add a container definition with your ECR image URL
+   - Set port mappings (container port 80)
+   - Add environment variables from your .env file
+
+6. **Create an ECS Service:**
+   - Create a new service in your cluster
+   - Use the task definition you created
+   - Configure desired number of tasks (1 or more for redundancy)
+   - Configure VPC, subnets, and security groups
+   - Enable public IP
+
+### Step 2: Configure Application Load Balancer
+
+1. **Create an Application Load Balancer:**
+   - Go to EC2 > Load Balancers
+   - Create a new Application Load Balancer
+   - Configure internet-facing, VPC, and subnets
+   - Configure security group to allow HTTP on port 80
+   - (Optional) Configure HTTPS on port 443 with certificate
+
+2. **Create a Target Group:**
+   - Create a new target group for your ALB
+   - Target type: IP
+   - Protocol: HTTP, Port: 8000
+   - Configure health check path `/health`
+   - Set proper deregistration delay (60-120 seconds)
+
+3. **Configure Listeners:**
+   - Create a listener on port 80 (HTTP)
+   - Forward traffic to your target group
+   - (Optional) Add HTTPS listener on port 443
+
+4. **Update ECS Service:**
+   - Edit your ECS service to use load balancing
+   - Select your target group
+   - Enable service discovery if needed
+
+5. **Update Front-end Configuration:**
+   - Update `front_end/static/js/api.js` with your ALB URL:
+     ```javascript
+     this.apiBaseUrl = 'http://your-alb-url.us-east-1.elb.amazonaws.com';
+     ```
+
+### Step 3: Deploy Frontend to S3
+
+1. **Create an S3 bucket:**
+   ```bash
+   aws s3 mb s3://your-wayfinder-frontend-bucket
+   ```
+
+2. **Enable Static Website Hosting:**
+   - Go to S3 console, select your bucket
+   - Properties > Static website hosting
+   - Set index.html as the index document
+
+3. **Configure public access:**
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": "*",
+         "Action": "s3:GetObject",
+         "Resource": "arn:aws:s3:::your-wayfinder-frontend-bucket/*"
+       }
+     ]
+   }
+   ```
+
+4. **Upload frontend files:**
+   ```bash
+   aws s3 sync ./front_end/ s3://your-wayfinder-frontend-bucket
+   ```
+
+### Step 4: Force Updating ECS Deployment
+
+When you make changes to your container image and push a new version to ECR, you need to force a new deployment to update your running service:
+
+1. **Using AWS CLI:**
+   ```bash
+   aws ecs update-service --cluster your-cluster-name --service your-service-name --force-new-deployment
+   ```
+
+2. **Using AWS Console:**
+   - Go to ECS > Clusters > Your Cluster
+   - Select the service
+   - Click "Update"
+   - Check "Force new deployment" option
+   - Click "Update Service"
+
+This forces ECS to pull the latest image from ECR even if the image tag hasn't changed.
 
 ## API Endpoints
 
@@ -63,18 +181,19 @@ docker run -p 8000:8000 --env-file .env neurodiverse-job-api
 - `POST /submit_questionnaire`: Submit answers and get analysis
 - `GET /results/{assessment_id}`: Retrieve results by ID
 
-## Project Structure
+## Frontend Structure
 
-- `app.py` - Main Lambda handler that processes API requests
-- `job_analyzer.py` - Job analysis logic
-- `response_evaluator.py` - Evaluates user responses
-- `utils.py` - Utility functions
-- `create_tables.py` - Script to create required DynamoDB tables
-- `front_end/` - Static front-end files
+The frontend is a static web application with the following key files:
+- `index.html` - Landing page
+- `questionnaire.html` - Questionnaire form
+- `results.html` - Results display page
+- `static/js/api.js` - API communication
+- `static/js/app.js` - Application logic
+- `static/css/styles.css` - Styling
 
 ## Database Setup
 
-Before deploying the Lambda function, you need to create the required DynamoDB tables:
+Before deploying the application, you need to create the required DynamoDB tables:
 
 ```bash
 # Run the table creation script
@@ -86,104 +205,38 @@ This script will create the following tables if they don't already exist:
 - `AnalysisTemplates` - Stores pre-computed analysis templates
 - `JobBank` - Stores job information for recommendations
 
-## Deployment Instructions
+## Troubleshooting
 
-### 1. Deploy the Backend Lambda Function
+### JSON Serialization Issues
 
-1. Package the Lambda code:
+If you encounter errors related to Decimal serialization, check that the CustomJSONEncoder is being properly applied in app.py:
 
-```bash
-# Install dependencies into a 'package' directory
-pip install -r requirements.txt --target ./package
+```python
+# When storing data in DynamoDB
+json.dumps(data, cls=CustomJSONEncoder)
 
-# Navigate to the package directory
-cd package
-
-# Zip the dependencies
-zip -r ../lambda_function.zip .
-
-# Return to the project root
-cd ..
-
-# Add the Python files to the zip
-zip -g lambda_function.zip app.py job_analyzer.py response_evaluator.py utils.py
+# When returning API responses
+return {
+    "statusCode": 200,
+    "body": json.dumps(data, cls=CustomJSONEncoder)
+}
 ```
 
-2. Create a Lambda function in the AWS Console:
-   - Runtime: Python 3.9+
-   - Handler: app.lambda_handler
-   - Upload the lambda_function.zip file
-   - Set the appropriate environment variables:
-     - `OPENAI_API_KEY`: Your OpenAI API key
-     - `AWS_ACCESS_KEY_ID`: Your AWS access key (if using cross-account access)
-     - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key (if using cross-account access)
-     - `AWS_REGION`: Your AWS region (e.g., us-east-1)
-     - `LANGTRACE_API_KEY`: Your Langtrace API key (if using)
+### ALB Health Check Issues
 
-3. Configure Lambda function settings:
-   - Memory: 256 MB or higher (recommendation: 512 MB)
-   - Timeout: 30 seconds
-   - Configure appropriate IAM role with permissions for:
-     - Amazon Bedrock
-     - DynamoDB
-     - S3 (if needed)
-     - CloudWatch Logs
+If your ALB health checks are failing:
+1. Verify the health check path is `/health`
+2. Check that the FastAPI application is running on port 8000
+3. Make sure security groups allow traffic on port 8000
 
-### 2. Set Up API Gateway
+### ECS Task Failures
 
-1. Create a new REST API in API Gateway
-2. Create the following resources and methods:
-   - `GET /questionnaire` - Get questionnaire questions
-   - `POST /submit_questionnaire` - Submit answers
-   - `GET /results/{assessment_id}` - Get results by ID
-   - `GET /health` - Health check endpoint
-
-3. For each method:
-   - Integration type: Lambda Function
-   - Lambda Function: Select your Lambda function
-   - Enable Lambda Proxy integration
-
-4. Configure CORS:
-   - Enable CORS for all resources
-   - Allow headers: Content-Type, X-Amz-Date, Authorization, X-Api-Key
-   - Allow methods: GET, POST, OPTIONS
-   - Allow origin: * (or your specific domain)
-
-5. Deploy the API to a stage (e.g., "prod")
-6. Note your API Gateway URL: `https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`
-
-### 3. Deploy the Front-end
-
-Option 1: Host on S3 with Static Website Hosting:
-1. Create an S3 bucket
-2. Enable Static Website Hosting
-3. Update `front_end/static/js/api.js` with your API Gateway URL:
-   ```javascript
-   this.apiBaseUrl = 'https://your-api-id.execute-api.your-region.amazonaws.com/prod';
-   ```
-4. Upload the contents of the `front_end` directory to the S3 bucket
-5. Configure bucket policy to allow public read access
-
-Option 2: Host on another web server:
-1. Update `front_end/static/js/api.js` with your API Gateway URL
-2. Deploy the contents of the `front_end` directory to your web server
-
-## Local Development
-
-For local development and testing:
-
-1. Set API URL in browser console:
-   ```javascript
-   window.API_GATEWAY_URL = 'https://your-api-id.execute-api.your-region.amazonaws.com/prod';
-   ```
-
-2. Or run without an API using the mock data implementation:
-   - Just open the `front_end/index.html` file in a browser
-   - The application will automatically detect it's running locally and use mock data
+If your ECS tasks are failing to start:
+1. Check CloudWatch logs for error messages
+2. Verify IAM permissions for ECS tasks
+3. Check that environment variables are properly configured
 
 ## Data Structure
-
-### Profile JSON Structure
 
 The application uses a structured JSON format for profile data:
 
@@ -208,12 +261,9 @@ The application uses a structured JSON format for profile data:
   "additional_insights": {
     "description": "No additional insights",
     "explanation": ""
-  },
-  "strengths": ["Attention to detail", "Pattern recognition", "Logical thinking"]
+  }
 }
 ```
-
-The front-end converts this JSON structure into HTML for display.
 
 ## Dependencies
 
