@@ -1,6 +1,67 @@
-# Neurodiverse Job Quest - Lambda Implementation
+# Neurodiverse Job Analysis API
 
-This implementation of the Neurodiverse Job Quest is designed to be deployed as an AWS Lambda function with API Gateway integration.
+A FastAPI-based API for analyzing job preferences and providing recommendations for neurodiverse individuals.
+
+## Overview
+
+This application provides:
+- Questionnaire data for collecting user preferences
+- Analysis of user responses to identify work style and preferences
+- Job recommendations based on user profile
+- Storage of assessment results in AWS DynamoDB
+
+## Architecture
+
+The application is structured following separation of concerns:
+- `main.py` - FastAPI application entry point, handles routing only
+- `app.py` - Contains business logic and data processing functions
+- Other supporting modules for analysis and recommendations
+
+## Development Setup
+
+1. Clone this repository
+2. Create a `.env` file with your credentials:
+   ```
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_REGION=us-east-1
+   OPENAI_API_KEY=your_openai_key
+   LANGTRACE_API_KEY=your_langtrace_key
+   ```
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+4. Run the development server:
+   ```
+   python main.py
+   ```
+
+## Docker Container
+
+Build the Docker container:
+```
+docker build -t neurodiverse-job-api .
+```
+
+Run the container:
+```
+docker run -p 8000:8000 --env-file .env neurodiverse-job-api
+```
+
+## Deploying to AWS ECS
+
+1. Create an ECR repository
+2. Push your Docker image to ECR
+3. Create an ECS cluster and task definition
+4. Deploy the service with appropriate IAM roles for DynamoDB access
+
+## API Endpoints
+
+- `GET /health`: Health check endpoint
+- `GET /questionnaire`: Get questionnaire data
+- `POST /submit_questionnaire`: Submit answers and get analysis
+- `GET /results/{assessment_id}`: Retrieve results by ID
 
 ## Project Structure
 

@@ -1,4 +1,3 @@
-
 from crewai import Agent, Crew, Task
 import json
 import logging
@@ -302,7 +301,7 @@ class JobAnalyzer:
             self.debug(f"Error parsing JSON result: {str(e)}")
             return {}
     
-    def process_job_results(self, retrieval_results: List[Dict[str, Any]], bedrock_score: int = None) -> List[Dict[str, Any]]:
+    def process_job_results(self, retrieval_results: List[Dict[str, Any]], bedrock_score: List[int]	 = None) -> List[Dict[str, Any]]:
         """
         Process a list of Bedrock retrieval results into structured job recommendations
         
@@ -321,18 +320,8 @@ class JobAnalyzer:
                 s3_uri = result["location"]["s3Location"]["uri"]
                 
                 # Use the provided consistent bedrock_score if available
-                if bedrock_score is not None:
-                    current_bedrock_score = bedrock_score
-                    self.debug(f"Using consistent Bedrock score {current_bedrock_score} for all recommendations")
-                else:
-                    # Otherwise calculate individual scores
-                    if 'score' in result:
-                        current_bedrock_score = int(float(result['score']) * 100)
-                    elif 'metadata' in result and 'score' in result['metadata']:
-                        current_bedrock_score = int(float(result['metadata']['score']) * 100)
-                    else:
-                        current_bedrock_score = 75  # Default score if not available
-                
+                current_bedrock_score = bedrock_score[i] * 100
+                self.debug(f"Using consistent Bedrock score {current_bedrock_score} for all recommendations")
                 self.debug(f"Processing result {i+1} with Bedrock score {current_bedrock_score}, URI: {s3_uri}")
                 
                 # Process the job content with CrewAI

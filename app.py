@@ -206,166 +206,6 @@ def process_questionnaire_answers(answers):
         })
     }
 
-# Lambda handler function
-def lambda_handler(event, context):
-    """AWS Lambda handler function"""
-    
-    # Log the incoming event
-    debug("Lambda invoked with event", event)
-    
-    # Get HTTP method and path
-    http_method = event.get('httpMethod', '')
-    path = event.get('path', '')
-    
-    # Create path patterns for routing
-    if http_method == 'GET' and path == '/questionnaire':
-        # Return questionnaire data
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({
-                "questions": questions
-            })
-        }
-    
-    elif http_method == 'GET' and path == '/health':
-        # Health check endpoint
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({
-                "status": "healthy"
-            })
-        }
-    
-    elif http_method == 'POST' and path == '/submit_questionnaire':
-        # Process submitted questionnaire
-        try:
-            # Parse request body
-            body = json.loads(event.get('body', '{}'))
-            
-            # Process answers and get results
-            result = process_questionnaire_answers(body)
-            
-            # Add CORS headers to the response
-            result["headers"] = {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            }
-            
-            return result
-            
-        except Exception as e:
-            app_logger.error(f"Error processing questionnaire: {str(e)}")
-            return {
-                "statusCode": 500,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({
-                    "error": "Internal server error",
-                    "detail": str(e)
-                })
-            }
-    
-    elif http_method == 'GET' and path.startswith('/results/'):
-        # Get assessment results by ID
-        try:
-            assessment_id = path.split('/')[-1]
-            
-            # Retrieve the stored assessment from DynamoDB
-            debug(f"Retrieving assessment with ID: {assessment_id}")
-            response = assessments_table.get_item(
-                Key={
-                    'assessment_id': assessment_id
-                }
-            )
-            
-            # Check if assessment was found
-            if 'Item' not in response:
-                debug(f"Assessment ID {assessment_id} not found in database")
-                return {
-                    "statusCode": 404,
-                    "headers": {
-                        "Content-Type": "application/json",
-                        "Access-Control-Allow-Origin": "*"
-                    },
-                    "body": json.dumps({
-                        "error": "Assessment not found"
-                    })
-                }
-            
-            # Get the stored data
-            item = response['Item']
-            
-            # Parse stored JSON strings
-            if 'profile' in item and isinstance(item['profile'], str):
-                item['profile'] = json.loads(item['profile'])
-            
-            if 'recommendations' in item and isinstance(item['recommendations'], str):
-                item['recommendations'] = json.loads(item['recommendations'])
-            
-            # Return just the profile and recommendations data (not the HTML)
-            result_data = {
-                "assessment_id": assessment_id,
-                "profile": item.get('profile', {}),
-                "recommendations": item.get('recommendations', [])
-            }
-            
-            return {
-                "statusCode": 200,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps(result_data)
-            }
-            
-        except Exception as e:
-            app_logger.error(f"Error fetching results: {str(e)}")
-            return {
-                "statusCode": 500,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({
-                    "error": "Internal server error",
-                    "detail": str(e)
-                })
-            }
-    
-    # Handle OPTIONS request for CORS
-    elif http_method == 'OPTIONS':
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
-            },
-            "body": "{}"
-        }
-    
-    # Return 404 for undefined routes
-    else:
-        return {
-            "statusCode": 404,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({
-                "error": "Not found"
-            })
-        }
 
 def analyze_responses(answers):
     debug("Starting response analysis")
@@ -861,7 +701,7 @@ def get_recommendations_from_bedrock(analysis):
             if descriptions:
                 query += " " + " ".join(descriptions)
             else:
-                query = "Find tech jobs suitable for neurodiverse candidates with various work preferences"
+                query = "Find jobs suitable for neurodiverse candidates with the aforementioned work preferences"
         
         debug(f"Query for Bedrock: {query}")
         bedrock_metrics["query_constructed"] = True
@@ -898,6 +738,7 @@ def get_recommendations_from_bedrock(analysis):
                         elif 'metadata' in result and 'score' in result['metadata']:
                             scores.append(float(result['metadata']['score']))
                     
+                    debug(f"Raw scores from bedrock: {scores}")
                     # If we have scores, calculate an average relevancy
                     if scores:
                         avg_score = sum(scores) / len(scores)
@@ -972,7 +813,7 @@ def get_recommendations_from_bedrock(analysis):
         debug("Processing job results with CrewAI agents")
         try:
             # Use the consistent bedrock_relevancy_percentage for all job recommendations
-            job_recommendations = job_analyzer.process_job_results(retrieval_results, bedrock_relevancy_percentage)
+            job_recommendations = job_analyzer.process_job_results(retrieval_results, scores)
             
             # Tool Call Accuracy - successful if we got recommendations
             if job_recommendations and len(job_recommendations) > 0:

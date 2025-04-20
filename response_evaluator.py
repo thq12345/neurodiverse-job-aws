@@ -1,7 +1,3 @@
-
-# langtrace_api_key = os.environ.get("LANGTRACE_API_KEY")
-# langtrace.init(api_key=langtrace_api_key)
-
 from crewai import Agent, Crew, Task
 import json
 import logging
