@@ -17,6 +17,7 @@ from job_analyzer import JobAnalyzer
 import uuid
 import time
 import requests
+from decimal import Decimal
 
 # Initialize AWS session
 aws_session = boto3.Session(
@@ -116,7 +117,6 @@ questions = [
 # JSON encoder for handling Decimal types and other non-standard types
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        from decimal import Decimal
         if isinstance(obj, Decimal):
             return float(obj)
         return super(CustomJSONEncoder, self).default(obj)
@@ -200,8 +200,34 @@ def process_questionnaire_answers(answers):
         )
         debug("Successfully stored assessment data")
     except Exception as e:
-        app_logger.error(f"Error storing assessment data: {str(e)}")
-        # Continue even if storage fails - we can still return results
+        error_message = str(e)
+        # Check which field might be causing the error
+        problematic_field = "unknown"
+        
+        # Try to identify the problematic field by attempting to serialize each field individually
+        try:
+            json.dumps(formatted_answers, cls=CustomJSONEncoder)
+        except Exception:
+            problematic_field = "answers"
+        
+        if problematic_field == "unknown":
+            try:
+                json.dumps(profile, cls=CustomJSONEncoder)
+            except Exception:
+                problematic_field = "profile"
+        
+        if problematic_field == "unknown":
+            try:
+                json.dumps(recommendations, cls=CustomJSONEncoder)
+            except Exception:
+                problematic_field = "recommendations"
+        
+        app_logger.error(f"Error storing assessment data - Field '{problematic_field}' cannot be serialized: {error_message}")
+        
+        # Debug the content type of the problematic field
+        if problematic_field != "unknown":
+            field_data = locals().get(problematic_field)
+            app_logger.error(f"Problematic field type: {type(field_data)}, Content sample: {str(field_data)[:100]}")
     
     # Return combined results (JSON only, no HTML)
     return {
