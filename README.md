@@ -6,6 +6,8 @@ This repository represents FastAPI implementation designed to be hosted on AWS, 
 
 Another local implementation using Flask (also fully functional) is available here: https://github.com/thq12345/neurodiverse-job-quest
 
+If you want to test this directly online, here is the webpage: http://neurodiverse-job-frontend.s3-website-us-east-1.amazonaws.com
+
 ## Overview
 
 This application provides:
