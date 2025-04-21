@@ -4,7 +4,7 @@ A web application for analyzing job preferences and providing recommendations fo
 
 This repository represents FastAPI implementation designed to be hosted on AWS, however it can also run on local machine, just run the main.py file!
 
-Another local implementation using Flask is available here: https://github.com/thq12345/neurodiverse-job-quest
+Another local implementation using Flask (also fully functional) is available here: https://github.com/thq12345/neurodiverse-job-quest
 
 ## Overview
 
